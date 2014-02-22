@@ -32,28 +32,31 @@ def main():
     Main parser for a PIPE shell script.
     """
 
+    # Set up background.
     prefixes = (os.environ.get('HTTPPATH') or "").split(";")
     commands = (url.strip() for url in sys.argv[1].split("|"))
     previous = None
 
+    if "" not in prefixes:
+        prefixes.append("")
+
+    # Prepare a redirect-less URL opener.
     cookiejar = cookielib.CookieJar()
     opener = urllib2.build_opener(RedirectBlocker,
                                   urllib2.HTTPCookieProcessor(cookiejar))
 
-    if "" not in prefixes:
-        prefixes.append("")
-
     for command in commands:
         for prefix in prefixes:
+            # Build a plausible URL with this prefix.
             url = prefix + "/" + command
 
             if not url.startswith('http'):
                 continue
 
-            print("POST {}".format(url))
-
+            # Fetch each code, as appropriate.
             result = opener.open(url, urllib.urlencode({'source': previous}))
 
+            # Handle resulting data.
             if result.code == 303:
                 previous = urlparse.urljoin(url, result.info()['Location'])
             elif result.code in (200, 201):
@@ -73,9 +76,8 @@ def main():
             print("Unknown command: {!r}".format(command))
             sys.exit(2)
 
-    print("GET {}".format(previous))
-
-    result = opener.open(previous, urllib.urlencode({'source': previous}))
+    # Retrieve the final result from the last item in the pipeline.
+    result = urllib.urlopen(previous)
     print(result.read())
 
 if __name__ == "__main__":
