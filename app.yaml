@@ -1,0 +1,16 @@
+application: pipes-demo
+version: alpha
+api_version: 1
+runtime: python27
+threadsafe: yes
+
+handlers:
+  - url: /sort
+    script: sort.app
+  - url: /head
+    script: head.app
+  - url: /storage
+    script: storage.app
+  - url: /(.*\.txt)
+    static_files: \1
+    upload: .*\.txt
